@@ -1,7 +1,587 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Nation Cheats — API Gateway</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg1:#0f1724;
+    --bg2:#071633;
+    --accent:#00eaff;
+    --card:#0f1726;
+    --muted:rgba(255,255,255,0.6);
+    --glass: rgba(255,255,255,0.04);
+    --glass-2: rgba(255,255,255,0.02);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(0,234,255,0.06), transparent 6%),
+                linear-gradient(120deg,var(--bg1),var(--bg2));
+    color:#e9f8ff;
+    -webkit-font-smoothing:antialiased;
+    padding:36px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:28px;
+    min-height:100vh;
+    animation:pageIn .7s ease;
+  }
+
+  @keyframes pageIn { from {opacity:0; transform:translateY(8px)} to {opacity:1; transform:none} }
+
+  .header {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  }
+
+  .shell{
+    width:100%;
+    max-width:1100px;
+    display:grid;
+    grid-template-columns: 380px 1fr;
+    gap:28px;
+    align-items:start;
+  }
+
+  /* Left panel */
+  .panel {
+    background: linear-gradient(180deg, var(--glass), var(--glass-2));
+    border-radius:14px;
+    padding:24px;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.04);
+    position:sticky;
+    top:28px;
+    height:fit-content;
+    backdrop-filter: blur(6px) saturate(120%);
+  }
+
+  .brand{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .logo{
+    width:56px;height:56px;border-radius:12px;
+    background: linear-gradient(135deg,#00eaff 0%, #6effc5 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:#022; font-size:20px;
+    box-shadow: 0 6px 18px rgba(0,234,255,0.06);
+  }
+  .title{
+    font-size:20px;font-weight:700;line-height:1;
+  }
+  .subtitle{
+    font-size:12px;color:var(--muted);margin-top:4px;
+  }
+
+  .hero {
+    margin-top:18px;
+    text-align:left;
+  }
+  .hero h1{
+    margin:0;font-size:26px;letter-spacing:-0.02em;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+  }
+  .hero p{color:var(--muted);margin-top:8px;font-size:13px}
+
+  .quick {
+    display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;
+  }
+  .chip{
+    background:rgba(255,255,255,0.03);
+    padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted);
+    border:1px solid rgba(255,255,255,0.02);
+  }
+
+  /* Right area — cards + content */
+  .content {
+    min-height:420px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .cards{
+    display:grid;
+    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+    gap:16px;
+  }
+
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));
+    border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);
+    transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s;
+    cursor:pointer; display:flex;flex-direction:column;gap:8px;
+    overflow:hidden; position:relative;
+  }
+  .card:hover{ transform: translateY(-8px) scale(1.01); box-shadow: 0 18px 50px rgba(2,6,23,0.65);}
+  .card .badge{
+    font-size:11px;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,0.24);color:var(--muted);display:inline-block;
+  }
+  .card h3{margin:0;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:13px}
+  .url-sample{
+    margin-top:8px;font-size:12px;color:var(--accent);word-break:break-all;
+  }
+
+  /* modal */
+  .modal-backdrop{
+    position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55));
+    display:none;align-items:center;justify-content:center;padding:22px;z-index:60;
+  }
+  .modal{
+    width:100%;max-width:880px;background:linear-gradient(180deg,#06111b, #071827);border-radius:14px;
+    padding:18px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 20px 60px rgba(2,6,23,0.7);
+  }
+  .modal header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;
+  }
+  .modal h2{font-size:18px;margin:0}
+  .close-btn{
+    background:transparent;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;border-radius:8px;
+  }
+  .modal .split{
+    display:grid;grid-template-columns: 1fr 420px;gap:12px;
+  }
+  .form-row{display:flex;gap:8px;margin-bottom:10px}
+  .form-row label{min-width:64px;color:var(--muted);font-size:13px}
+  input[type="text"], select, textarea {
+    flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02);
+    color: #e8fbff;
+    font-size:13px;
+  }
+  select {
+    background: rgba(7, 16, 39, 0.8);
+    color: #e8fbff;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #e8fbff 50%), linear-gradient(135deg, #e8fbff 50%, transparent 50%);
+    background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+    background-size: 10px 10px, 10px 10px;
+    background-repeat: no-repeat;
+  }
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 5px rgba(0, 234, 255, 0.5);
+  }
+  textarea{min-height:120px;resize:vertical;font-family:monospace}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:0;cursor:pointer;
+    background:linear-gradient(90deg,var(--accent), #7dffe6); color:#022; font-weight:700;
+    box-shadow: 0 8px 22px rgba(0,234,255,0.06);
+  }
+  .btn.ghost{
+    background:transparent;color:var(--accent);border:1px solid rgba(0,234,255,0.15);
+  }
+
+  .response {
+    background:#071020;border-radius:10px;padding:12px;color:#cfeff6;font-size:13px;border:1px solid rgba(255,255,255,0.03);
+    height:220px;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  }
+
+  .meta {display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:8px}
+
+  .foot {
+    display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:var(--muted);font-size:13px;
+  }
+
+  .small{font-size:12px;color:var(--muted)}
+
+  /* Glowing effect for "Developer" text */
+  .developer-glow {
+    font-size: 12px;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(0, 234, 255, 0.7), 0 0 20px rgba(0, 234, 255, 0.5), 0 0 30px rgba(0, 234, 255, 0.3);
+    animation: glow 1.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from { text-shadow: 0 0 5px rgba(0, 234, 255, 0.6), 0 0 10px rgba(0, 234, 255, 0.4), 0 0 15px rgba(0, 234, 255, 0.2); }
+    to { text-shadow: 0 0 10px rgba(0, 234, 255, 0.8), 0 0 20px rgba(0, 234, 255, 0.6), 0 0 30px rgba(0, 234, 255, 0.4); }
+  }
+
+  /* responsive */
+  @media (max-width:980px){
+    .shell{grid-template-columns:1fr; padding:16px}
+    .modal .split{grid-template-columns:1fr}
+  }
+</style>
+</head>
 <body>
-  <h1>API Gateway</h1>
-  <p>Use /ban, /info, /like, or /token endpoints</p>
+  <div class="header">
+    <h1>Nation Cheats</h1>
+  </div>
+  <div class="shell">
+    <aside class="panel">
+      <div class="brand">
+        <div class="logo">NC</div>
+        <div>
+          <div class="title">Nation Cheats</div>
+          <div class="subtitle">Unified API Gateway</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <h1>API Gateway</h1>
+        <p>Use one domain to access multiple APIs. Click a card to open examples and try requests directly.</p>
+      </div>
+
+      <div class="quick" style="margin-top:18px">
+        <div class="chip">Single domain</div>
+        <div class="chip">/ban • /info • /like • /token</div>
+        <div class="chip">Try requests</div>
+      </div>
+
+      <div style="margin-top:18px" class="small">
+        <strong>Note:</strong> If an endpoint is blocked by CORS, use the example URL or test from backend/curl.
+      </div>
+
+      <div style="margin-top:14px;color:var(--muted);font-size:12px">
+        <div>Powered by <strong>Nation Cheats</strong></div>
+        <div><span class="developer-glow">Developer</span>: Reflex aka Gamerz MGR</div>
+        <div style="margin-top:8px">© <span id="year"></span></div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;color:var(--muted)">Available endpoints</div>
+          <div style="font-weight:700;font-size:20px">Click a card to open example</div>
+        </div>
+        <div style="color:var(--muted);font-size:13px">
+          Domain: <span style="color:var(--accent);font-weight:700" id="domain">https://api.nationcheats.shop</span>
+        </div>
+      </div>
+
+      <div class="cards" id="cards">
+        <div class="card" data-endpoint="/ban">
+          <div class="badge">GET</div>
+          <h3>/ban</h3>
+          <p>Check whether a UID is banned</p>
+          <div class="url-sample">/ban?uid=5193358199</div>
+        </div>
+
+        <div class="card" data-endpoint="/info">
+          <div class="badge">GET</div>
+          <h3>/info</h3>
+          <p>Retrieve user info (region optional)</p>
+          <div class="url-sample">/info?uid=5193358199&amp;region=ind</div>
+        </div>
+
+        <div class="card" data-endpoint="/like">
+          <div class="badge">POST</div>
+          <h3>/like</h3>
+          <p>Like a profile (uid + region)</p>
+          <div class="url-sample">/like?uid=5193358199&amp;region=ind</div>
+        </div>
+
+        <div class="card" data-endpoint="/token">
+          <div class="badge">POST</div>
+          <h3>/token</h3>
+          <p>Generate a token using uid &amp; password</p>
+          <div class="url-sample">/token?uid=5193358199&amp;password=xxxxx</div>
+        </div>
+      </div>
+
+      <section style="margin-top:6px;color:var(--muted);font-size:13px">
+        Tip: Click a card to open the interactive modal. Use the Try button to fetch the API response (CORS permitting).
+      </section>
+
+    </main>
+  </div>
+
+  <!-- modal -->
+  <div class="modal-backdrop" id="backdrop" role="dialog" aria-hidden="true">
+    <div class="modal" role="document" id="modal" aria-modal="true">
+      <header>
+        <div>
+          <h2 id="modal-title">/ban</h2>
+          <div class="small" id="modal-desc">Check whether a UID is banned</div>
+        </div>
+        <button class="close-btn" id="closeModal" title="Close">✕</button>
+      </header>
+
+      <div class="split">
+        <div>
+          <div class="meta"><div class="badge">METHOD</div><div id="methodLabel">GET</div></div>
+
+          <div style="margin-bottom:10px">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Example URL</div>
+            <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;display:flex;gap:8px;align-items:center">
+              <code id="exampleUrl" style="color:var(--accent);font-family:ui-monospace,monospace;font-size:13px"></code>
+              <button class="btn ghost" id="copyUrlBtn" style="margin-left:auto">Copy</button>
+            </div>
+          </div>
+
+          <div style="margin-top:8px">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Query / Body</div>
+
+            <div class="form-row">
+              <label for="input-uid">uid</label>
+              <input type="text" id="input-uid" placeholder="5193358199" />
+            </div>
+
+            <div class="form-row">
+              <label for="input-region" for-region>region</label>
+              <input type="text" id="input-region" placeholder="ind (optional)" />
+            </div>
+
+            <div class="form-row">
+              <label for="input-password" for-password>password</label>
+              <input type="text" id="input-password" placeholder="only for /token" />
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <button class="btn" id="tryBtn">Try</button>
+              <button class="btn ghost" id="openInNew">Open in new tab</button>
+              <button class="btn ghost" id="clearResp">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:13px;color:var(--muted)">Response</div>
+            <div class="small" id="respMeta">status: —</div>
+          </div>
+
+          <div class="response" id="responseArea">
+            <div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+            <button class="btn ghost" id="copyResp">Copy JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="small">Powered by Nation Cheats • API Gateway</div>
+        <div class="small">Domain: <span id="domain2" style="color:var(--accent)"></span></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // init
+  document.getElementById('year').textContent = new Date().getFullYear();
+  const domain = document.getElementById('domain').textContent.trim();
+  document.getElementById('domain2').textContent = domain;
+
+  // card click handlers
+  const cards = document.querySelectorAll('.card');
+  const backdrop = document.getElementById('backdrop');
+  const modalTitle = document.getElementById('modal-title');
+  const modalDesc = document.getElementById('modal-desc');
+  const exampleUrl = document.getElementById('exampleUrl');
+  const methodLabel = document.getElementById('methodLabel');
+  const inputUid = document.getElementById('input-uid');
+  const inputRegion = document.getElementById('input-region');
+  const inputPassword = document.getElementById('input-password');
+  const tryBtn = document.getElementById('tryBtn');
+  const responseArea = document.getElementById('responseArea');
+  const respMeta = document.getElementById('respMeta');
+  const openInNew = document.getElementById('openInNew');
+
+  let current = { path:'/ban', method:'GET' };
+
+  const info = {
+    '/ban': { method:'GET', desc:'Check whether a UID is banned', sample:'/ban?uid=5193358199' },
+    '/info': { method:'GET', desc:'Retrieve user information (region optional)', sample:'/info?uid=5193358199&region=ind' },
+    '/like': { method:'POST', desc:'Like a user (uid & region)', sample:'/like?uid=5193358199&region=ind' },
+    '/token': { method:'POST', desc:'Generate a token using uid & password', sample:'/token?uid=5193358199&password=xxxxx' }
+  };
+
+  function openModal(path) {
+    current.path = path;
+    const cfg = info[path] || {};
+    modalTitle.textContent = path;
+    modalDesc.textContent = cfg.desc || '';
+    methodLabel.textContent = cfg.method || 'GET';
+    exampleUrl.textContent = domain + (cfg.sample || path);
+
+    // Reset all inputs
+    inputUid.value = '';
+    inputRegion.value = '';
+    inputPassword.value = '';
+    respMeta.textContent = 'status: —';
+    responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+
+    // Safely handle label and input display
+    const regionLabel = document.querySelector('[for-region]');
+    const passwordLabel = document.querySelector('[for-password]');
+    if (regionLabel) regionLabel.style.display = 'none';
+    if (passwordLabel) passwordLabel.style.display = 'none';
+    inputRegion.style.display = 'none';
+    inputPassword.style.display = 'none';
+
+    // Remove existing region select if any
+    let oldSelect = document.getElementById('region-select');
+    if (oldSelect) oldSelect.remove();
+
+    if (path === '/ban') {
+      // Only uid
+      inputUid.parentElement.style.display = 'flex';
+    } else if (path === '/info' || path === '/like') {
+      // uid + region dropdown
+      inputUid.parentElement.style.display = 'flex';
+
+      const regionRow = inputRegion.parentElement;
+      const label = regionRow.querySelector('label[for-region]');
+      if (label) label.style.display = 'flex';
+      inputRegion.style.display = 'block';
+
+      const select = document.createElement('select');
+      select.id = 'region-select';
+      select.innerHTML = `
+        <option value="IND">IND — India</option>
+        <option value="AG">AG — Asian Global (TH, SG, etc)</option>
+        <option value="NX">NX — Brazil, US, SAC, NA</option>
+      `;
+      select.style.padding = '10px';
+      select.style.borderRadius = '8px';
+      select.style.background = 'rgba(7, 16, 39, 0.8)';
+      select.style.color = '#e8fbff';
+      select.style.border = '1px solid rgba(255,255,255,0.04)';
+      regionRow.replaceChild(select, inputRegion);
+    } else if (path === '/token') {
+      // uid + password only
+      inputUid.parentElement.style.display = 'flex';
+      const pwRow = inputPassword.parentElement;
+      const pwLabel = pwRow.querySelector('label[for-password]');
+      if (pwLabel) pwLabel.style.display = 'flex';
+      inputPassword.style.display = 'block';
+      pwRow.style.display = 'flex';
+    }
+
+    backdrop.style.display = 'flex';
+    backdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  cards.forEach(c => {
+    c.addEventListener('click', () => openModal(c.dataset.endpoint));
+  });
+
+  // close
+  document.getElementById('closeModal').addEventListener('click', () => {
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden', 'true');
+  });
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  // Example URL copy
+  document.getElementById('copyUrlBtn').addEventListener('click', () => {
+    navigator.clipboard?.writeText(exampleUrl.textContent).then(() => {
+      alert('URL copied to clipboard');
+    }).catch(() => alert('Copy failed — select and copy manually'));
+  });
+
+  // Try button — constructs URL and calls fetch
+  tryBtn.addEventListener('click', async () => {
+    const uid = inputUid.value.trim();
+    const regionSelect = document.getElementById('region-select');
+    const region = regionSelect ? regionSelect.value : '';
+    const password = inputPassword.value.trim();
+    const path = current.path;
+    const method = info[path].method || 'GET';
+
+    // build search params
+    const params = new URLSearchParams();
+    if (uid) params.set('uid', uid);
+    if (region) params.set('region', region);
+    if (password) params.set('password', password);
+
+    const url = domain + path + (params.toString() ? '?' + params.toString() : '');
+
+    responseArea.textContent = 'Calling ' + url + ' ...';
+    respMeta.textContent = 'status: pending';
+
+    try {
+      const fetchOptions = { method };
+      // For POST endpoints, prefer sending as body if CORS & API expects body:
+      if (method === 'POST') {
+        // Many of your APIs accept query params — here we put in body as JSON if password present
+        // but we'll also send as query since many examples use query strings.
+        fetchOptions.headers = { 'Content-Type': 'application/json' };
+        // include a simple body
+        fetchOptions.body = JSON.stringify(Object.fromEntries(params.entries()));
+      }
+
+      const res = await fetch(url, fetchOptions);
+      const text = await res.text();
+      let pretty;
+      try { pretty = JSON.stringify(JSON.parse(text), null, 2); }
+      catch (e) { pretty = text; }
+
+      responseArea.textContent = pretty;
+      respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
+    } catch (err) {
+      responseArea.textContent = 'Request failed — likely CORS or network error.\n\n' + (err && err.message ? err.message : String(err));
+      respMeta.textContent = 'status: error';
+    }
+  });
+
+  // copy response
+  document.getElementById('copyResp').addEventListener('click', () => {
+    const txt = responseArea.textContent || '';
+    if (!txt) return alert('Nothing to copy');
+    navigator.clipboard?.writeText(txt).then(() => alert('Response copied')).catch(() => alert('Copy failed'));
+  });
+
+  // open in new tab
+  openInNew.addEventListener('click', () => {
+    const uid = inputUid.value.trim();
+    const regionSelect = document.getElementById('region-select');
+    const region = regionSelect ? regionSelect.value : '';
+    const password = inputPassword.value.trim();
+    const params = new URLSearchParams();
+    if (uid) params.set('uid', uid);
+    if (region) params.set('region', region);
+    if (password) params.set('password', password);
+
+    const url = domain + current.path + (params.toString() ? '?' + params.toString() : '');
+    window.open(url, '_blank');
+  });
+
+  // clear response
+  document.getElementById('clearResp').addEventListener('click', () => {
+    responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+    respMeta.textContent = 'status: —';
+  });
+
+  // keyboard: Esc closes
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop.style.display === 'flex') {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+  });
+</script>
 </body>
 </html>
