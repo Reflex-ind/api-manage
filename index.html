@@ -412,47 +412,46 @@ const info = {
   '/token': { method:'POST', desc:'Generate a token using uid & password', sample:'/token?uid=5193358199&password=xxxxx' }
 };
 
-// Restore previous region input if dropdown exists
+// Remove old region dropdown
 function restoreRegionInput() {
-  let select = document.getElementById('region-select');
-  if (select) {
-    let regionRow = inputRegion.parentElement;
-    select.replaceWith(inputRegion);
-    inputRegion.style.display = 'none';
-  }
+  const oldSelect = document.getElementById('region-select');
+  if (oldSelect) oldSelect.replaceWith(inputRegion);
+  inputRegion.style.display = 'none';
 }
 
+// Open modal for a specific endpoint
 function openModal(path) {
-  // Show/Hide "Open in New Tab" button for GET only
-  openInNew.style.display = info[path].method === 'POST' ? 'none' : 'inline-flex';
   current.path = path;
-  const cfg = info[path] || {};
-  modalTitle.textContent = path;
-  modalDesc.textContent = cfg.desc || '';
-  methodLabel.textContent = cfg.method || 'GET';
-  exampleUrl.textContent = domain + (cfg.sample || path);
+  const cfg = info[path];
 
-  // Reset inputs and response
+  modalTitle.textContent = path;
+  modalDesc.textContent = cfg.desc;
+  methodLabel.textContent = cfg.method;
+  exampleUrl.textContent = domain + cfg.sample;
+
+  // Reset inputs
   inputUid.value = '';
   inputRegion.value = '';
   inputPassword.value = '';
   respMeta.textContent = 'status: —';
-  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API.</div>';
 
+  // Hide all inputs
   inputUid.parentElement.style.display = 'none';
   inputRegion.parentElement.style.display = 'none';
   inputPassword.parentElement.style.display = 'none';
   restoreRegionInput();
 
-  // Show inputs depending on endpoint
+  // Show inputs based on endpoint
   if (path === '/ban') {
     inputUid.parentElement.style.display = 'flex';
-  } else if (path === '/info' || path === '/like') {
+  }
+  else if (path === '/info' || path === '/like') {
     inputUid.parentElement.style.display = 'flex';
-    // Add region dropdown
     const regionRow = inputRegion.parentElement;
     inputRegion.style.display = 'none';
-    let select = document.createElement('select');
+
+    const select = document.createElement('select');
     select.id = 'region-select';
     select.innerHTML = `
       <option value="IND">IND — India</option>
@@ -466,19 +465,22 @@ function openModal(path) {
     select.style.border = '1px solid rgba(255,255,255,0.04)';
     regionRow.appendChild(select);
     regionRow.style.display = 'flex';
-  } else if (path === '/token') {
+  }
+  else if (path === '/token') {
     inputUid.parentElement.style.display = 'flex';
     inputPassword.parentElement.style.display = 'flex';
     inputPassword.style.display = 'block';
   }
 
+  // Show/Hide "Open in new tab" button
+  openInNew.style.display = cfg.method === 'POST' ? 'none' : 'inline-flex';
+
   // Try button click
   tryBtn.onclick = () => {
     const uid = inputUid.value.trim();
-    let regionSelect = document.getElementById('region-select');
+    const regionSelect = document.getElementById('region-select');
     const region = regionSelect ? regionSelect.value : '';
     const password = inputPassword.value.trim();
-    const path = current.path;
 
     if (!uid) {
       responseArea.textContent = 'Error: UID is required.';
@@ -486,14 +488,13 @@ function openModal(path) {
       return;
     }
 
-    // Build URL with query parameters for all endpoints
-    let params = new URLSearchParams();
+    // Build URL
+    const params = new URLSearchParams();
     params.set('uid', uid);
     if (region) params.set('region', region);
     if (password) params.set('password', password);
-    const finalUrl = domain + path + '?' + params.toString();
 
-    // Open in new tab
+    const finalUrl = domain + path + '?' + params.toString();
     window.open(finalUrl, '_blank');
 
     responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
@@ -504,9 +505,12 @@ function openModal(path) {
   backdrop.setAttribute('aria-hidden', 'false');
 }
 
-// Modal open on card click
+// Card click → open modal
 cards.forEach(c => {
-  c.onclick = () => openModal(c.dataset.endpoint);
+  c.onclick = () => {
+    if (!c.dataset.endpoint) return;
+    openModal(c.dataset.endpoint);
+  };
 });
 
 // Close modal
@@ -514,31 +518,39 @@ document.getElementById('closeModal').onclick = () => {
   backdrop.style.display = 'none';
   backdrop.setAttribute('aria-hidden', 'true');
 };
-backdrop.onclick = (e) => { if (e.target === backdrop) { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden', 'true'); } };
+backdrop.onclick = (e) => {
+  if (e.target === backdrop) {
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+};
 
 // Copy example URL
 document.getElementById('copyUrlBtn').onclick = () => {
-  navigator.clipboard?.writeText(exampleUrl.textContent).then(() => { alert('URL copied to clipboard'); }).catch(() => alert('Copy failed — select and copy manually'));
+  navigator.clipboard?.writeText(exampleUrl.textContent)
+    .then(() => alert('URL copied'))
+    .catch(() => alert('Copy failed'));
 };
 
-// Open GET in new tab
+// Open GET in new tab button
 openInNew.onclick = () => {
   const uid = inputUid.value.trim();
-  let regionSelect = document.getElementById('region-select');
+  const regionSelect = document.getElementById('region-select');
   const region = regionSelect ? regionSelect.value : '';
   const password = inputPassword.value.trim();
   const path = current.path;
 
   if (info[path].method === 'POST') {
-    alert('⚠️ This endpoint uses POST method.\nCannot open in new tab with GET.\nUse the "Try" button instead.');
+    alert('⚠️ POST endpoints must use "Try" button.');
     return;
   }
 
-  let params = new URLSearchParams();
+  const params = new URLSearchParams();
   if (uid) params.set('uid', uid);
   if (region) params.set('region', region);
   if (password) params.set('password', password);
-  window.open(domain + current.path + (params.toString() ? '?' + params.toString() : ''), '_blank');
+
+  window.open(domain + path + (params.toString() ? '?' + params.toString() : ''), '_blank');
 };
 
 // Copy response
@@ -550,17 +562,18 @@ document.getElementById('copyResp').onclick = () => {
 
 // Clear response
 document.getElementById('clearResp').onclick = () => {
-  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API.</div>';
   respMeta.textContent = 'status: —';
 };
 
-// Keyboard: Esc closes modal
-document.addEventListener('keydown', (e) => {
+// Close modal with Esc
+document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && backdrop.style.display === 'flex') {
     backdrop.style.display = 'none';
     backdrop.setAttribute('aria-hidden', 'true');
   }
 });
+
 
 
 </script>
