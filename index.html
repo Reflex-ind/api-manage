@@ -299,7 +299,7 @@
         <div class="card" data-endpoint="/token">
           <div class="badge">POST</div>
           <h3>/token</h3>
-          <p>Generate a token using uid &amp; password</p>
+          <p>Generate a token using uid & password</p>
           <div class="url-sample">/token?uid=5193358199&password=xxxxx</div>
         </div>
       </div>
@@ -384,188 +384,173 @@
   </div>
 
 <script>
-// Initialization
-document.getElementById('year').textContent = new Date().getFullYear();
-const domain = document.getElementById('domain').textContent.trim();
-document.getElementById('domain2').textContent = domain;
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialization
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const domain = document.getElementById('domain').textContent.trim();
 
-const cards = document.querySelectorAll('.card');
-const backdrop = document.getElementById('backdrop');
-const modalTitle = document.getElementById('modal-title');
-const modalDesc = document.getElementById('modal-desc');
-const exampleUrl = document.getElementById('exampleUrl');
-const methodLabel = document.getElementById('methodLabel');
-const inputUid = document.getElementById('input-uid');
-const inputRegion = document.getElementById('input-region');
-const inputPassword = document.getElementById('input-password');
-const tryBtn = document.getElementById('tryBtn');
-const responseArea = document.getElementById('responseArea');
-const respMeta = document.getElementById('respMeta');
-const openInNew = document.getElementById('openInNew');
+    const cards = document.querySelectorAll('.card');
+    const backdrop = document.getElementById('backdrop');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const exampleUrl = document.getElementById('exampleUrl');
+    const methodLabel = document.getElementById('methodLabel');
+    const inputUid = document.getElementById('input-uid');
+    const inputRegion = document.getElementById('input-region');
+    const inputPassword = document.getElementById('input-password');
+    const tryBtn = document.getElementById('tryBtn');
+    const responseArea = document.getElementById('responseArea');
+    const respMeta = document.getElementById('respMeta');
+    const openInNew = document.getElementById('openInNew');
 
-let current = { path:'/ban', method:'GET' };
+    const rowUid = document.getElementById('row-uid');
+    const rowRegion = document.getElementById('row-region');
+    const rowPassword = document.getElementById('row-password');
 
-const info = {
-  '/ban': { method:'GET', desc:'Check whether a UID is banned', sample:'/ban?uid=5193358199' },
-  '/info': { method:'GET', desc:'Retrieve user information (region optional)', sample:'/info?uid=5193358199&region=ind' },
-  '/like': { method:'POST', desc:'Like a user (uid & region)', sample:'/like?uid=5193358199&region=ind' },
-  '/token': { method:'POST', desc:'Generate a token using uid & password', sample:'/token?uid=5193358199&password=xxxxx' }
-};
+    let current = { path:'/ban', method:'GET' };
 
-// Utility for restoring region input if needed
-function restoreRegionInput() {
-  let select = document.getElementById('region-select');
-  if (select) {
-    let regionRow = inputRegion.parentElement;
-    select.replaceWith(inputRegion);
-    inputRegion.style.display = 'none';
-  }
-}
+    const info = {
+      '/ban': { method:'GET', desc:'Check whether a UID is banned', sample:'/ban?uid=5193358199' },
+      '/info': { method:'GET', desc:'Retrieve user information (region optional)', sample:'/info?uid=5193358199&region=IND' },
+      '/like': { method:'POST', desc:'Like a user (uid & region)', sample:'/like?uid=5193358199&region=IND' },
+      '/token': { method:'POST', desc:'Generate a token using uid & password', sample:'/token?uid=5193358199&password=xxxx' }
+    };
 
-function openModal(path) {
-  current.path = path;
-  const cfg = info[path] || {};
-  modalTitle.textContent = path;
-  modalDesc.textContent = cfg.desc || '';
-  methodLabel.textContent = cfg.method || 'GET';
-  exampleUrl.textContent = domain + (cfg.sample || path);
-
-  // Reset all
-  inputUid.value = '';
-  inputRegion.value = '';
-  inputPassword.value = '';
-  respMeta.textContent = 'status: —';
-  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
-
-  // Safely cleanup and reset all input UI
-  inputUid.parentElement.style.display = 'none';
-  inputRegion.parentElement.style.display = 'none';
-  inputPassword.parentElement.style.display = 'none';
-  restoreRegionInput();
-
-  if (path === '/ban') {
-    inputUid.parentElement.style.display = 'flex';
-  } else if (path === '/info' || path === '/like') {
-    inputUid.parentElement.style.display = 'flex';
-    // Insert region select dropdown afresh
-    const regionRow = inputRegion.parentElement;
-    inputRegion.style.display = 'none';
-    let select = document.createElement('select');
-    select.id = 'region-select';
-    select.innerHTML = `
-      <option value="IND">IND — India</option>
-      <option value="AG">AG — Asian Global (TH, SG, etc)</option>
-      <option value="NX">NX — Brazil, US, SAC, NA</option>
-    `;
-    select.style.padding = '10px';
-    select.style.borderRadius = '8px';
-    select.style.background = 'rgba(7, 16, 39, 0.8)';
-    select.style.color = '#e8fbff';
-    select.style.border = '1px solid rgba(255,255,255,0.04)';
-    regionRow.appendChild(select);
-    regionRow.style.display = 'flex';
-  } else if (path === '/token') {
-    inputUid.parentElement.style.display = 'flex';
-    inputPassword.parentElement.style.display = 'flex';
-    inputPassword.style.display = 'block';
-  }
-
-  // Always ensure listeners re-attach on open (fixes refresh bug)
-  tryBtn.onclick = async () => {
-    const uid = inputUid.value.trim();
-    let regionSelect = document.getElementById('region-select');
-    const region = regionSelect ? regionSelect.value : '';
-    const password = inputPassword.value.trim();
-    const path = current.path;
-    const method = info[path].method || 'GET';
-    let url = domain + path;
-    let fetchOptions = { method, headers: {}, mode: 'cors' };
-
-    // Validation
-    if (!uid) {
-      responseArea.textContent = 'Error: UID is required.';
-      respMeta.textContent = 'status: error';
-      return;
+    function restoreRegionInput() {
+      let select = document.getElementById('region-select');
+      if (select) {
+        select.remove();
+        inputRegion.style.display = 'none';
+      }
     }
 
-    // Build request
-    if (method === 'GET') {
+    function openModal(path) {
+      current.path = path;
+      const cfg = info[path] || {};
+      modalTitle.textContent = path;
+      modalDesc.textContent = cfg.desc || '';
+      methodLabel.textContent = cfg.method || 'GET';
+      exampleUrl.textContent = domain + (cfg.sample || path);
+
+      inputUid.value = '';
+      inputRegion.value = '';
+      inputPassword.value = '';
+      respMeta.textContent = 'status: —';
+      responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+
+      rowUid.style.display = 'none';
+      rowRegion.style.display = 'none';
+      rowPassword.style.display = 'none';
+      restoreRegionInput();
+
+      if (path === '/ban') {
+        rowUid.style.display = 'block';
+      } else if (path === '/info' || path === '/like') {
+        rowUid.style.display = 'block';
+        const select = document.createElement('select');
+        select.id = 'region-select';
+        select.innerHTML = `
+          <option value="IND">IND — India</option>
+          <option value="AG">AG — Asian Global (TH, SG, etc)</option>
+          <option value="NX">NX — Brazil, US, SAC, NA</option>
+        `;
+        rowRegion.appendChild(select);
+        rowRegion.style.display = 'block';
+      } else if (path === '/token') {
+        rowUid.style.display = 'block';
+        rowPassword.style.display = 'block';
+      }
+
+      tryBtn.onclick = async () => {
+        const uid = inputUid.value.trim();
+        let regionSelect = document.getElementById('region-select');
+        const region = regionSelect ? regionSelect.value : '';
+        const password = inputPassword.value.trim();
+        const method = info[path].method || 'GET';
+        let url = domain + path;
+        let fetchOptions = { method, headers: {}, mode: 'cors' };
+
+        if (!uid) {
+          responseArea.textContent = 'Error: UID is required.';
+          respMeta.textContent = 'status: error';
+          return;
+        }
+
+        if (method === 'GET') {
+          let params = new URLSearchParams();
+          params.set('uid', uid);
+          if (region) params.set('region', region);
+          url += '?' + params.toString();
+        } else if (method === 'POST') {
+          fetchOptions.headers['Content-Type'] = 'application/json';
+          let bodyObj = { uid };
+          if (path === '/like' && region) bodyObj.region = region;
+          if (path === '/token' && password) bodyObj.password = password;
+          fetchOptions.body = JSON.stringify(bodyObj);
+        }
+
+        responseArea.textContent = 'Calling ' + url + ' ...';
+        respMeta.textContent = 'status: pending';
+
+        try {
+          const res = await fetch(url, fetchOptions);
+          const txt = await res.text();
+          let pretty;
+          try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch (e) { pretty = txt || 'No response data'; }
+          responseArea.textContent = pretty;
+          respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
+          if (res.status === 403 || res.status === 405) responseArea.textContent += '\n\nNote: This may be due to CORS or server restrictions.';
+        } catch (err) {
+          responseArea.textContent = 'Request failed — likely CORS or network error.\n\nDetails: ' + (err.message || String(err));
+          respMeta.textContent = 'status: error';
+        }
+      };
+
+      backdrop.style.display = 'flex';
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    cards.forEach(c => c.onclick = () => openModal(c.dataset.endpoint));
+    document.getElementById('closeModal').onclick = () => {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+    };
+    backdrop.onclick = (e) => { if (e.target === backdrop) { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden', 'true'); } };
+
+    document.getElementById('copyUrlBtn').onclick = () => {
+      navigator.clipboard?.writeText(exampleUrl.textContent).then(() => alert('URL copied')).catch(() => alert('Copy failed'));
+    };
+
+    openInNew.onclick = () => {
+      const uid = inputUid.value.trim();
+      let regionSelect = document.getElementById('region-select');
+      const region = regionSelect ? regionSelect.value : '';
+      const password = inputPassword.value.trim();
       let params = new URLSearchParams();
-      params.set('uid', uid);
+      if (uid) params.set('uid', uid);
       if (region) params.set('region', region);
-      url += '?' + params.toString();
-    } else if (method === 'POST') {
-      fetchOptions.headers['Content-Type'] = 'application/json';
-      let bodyObj = { uid };
-      if (path === '/like' && region) bodyObj.region = region;
-      if (path === '/token' && password) bodyObj.password = password;
-      fetchOptions.body = JSON.stringify(bodyObj);
-    }
+      if (password) params.set('password', password);
+      window.open(domain + current.path + (params.toString() ? '?' + params.toString() : ''), '_blank');
+    };
 
-    responseArea.textContent = 'Calling ' + url + ' ...';
-    respMeta.textContent = 'status: pending';
+    document.getElementById('copyResp').onclick = () => {
+      const txt = responseArea.textContent || '';
+      if (!txt) return alert('Nothing to copy');
+      navigator.clipboard?.writeText(txt).then(() => alert('Response copied')).catch(() => alert('Copy failed'));
+    };
 
-    try {
-      const res = await fetch(url, fetchOptions);
-      const txt = await res.text();
-      let pretty;
-      try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch (e) { pretty = txt || 'No response data'; }
-      responseArea.textContent = pretty;
-      respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
-      if (res.status === 403 || res.status === 405) responseArea.textContent += '\n\nNote: This may be due to CORS or server restrictions.';
-    } catch (err) {
-      responseArea.textContent = 'Request failed — likely CORS or network error.\n\nDetails: ' + (err.message || String(err));
-      respMeta.textContent = 'status: error';
-    }
-  };
+    document.getElementById('clearResp').onclick = () => {
+      responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
+      respMeta.textContent = 'status: —';
+    };
 
-  backdrop.style.display = 'flex';
-  backdrop.setAttribute('aria-hidden', 'false');
-}
-
-// Always re-attach listeners
-cards.forEach(c => {
-  c.onclick = () => openModal(c.dataset.endpoint);
-});
-document.getElementById('closeModal').onclick = () => {
-  backdrop.style.display = 'none';
-  backdrop.setAttribute('aria-hidden', 'true');
-};
-backdrop.onclick = (e) => { if (e.target === backdrop) { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden', 'true'); } };
-// Example URL copy
-document.getElementById('copyUrlBtn').onclick = () => {
-  navigator.clipboard?.writeText(exampleUrl.textContent).then(() => { alert('URL copied to clipboard'); }).catch(() => alert('Copy failed — select and copy manually'));
-};
-// open in new tab
-openInNew.onclick = () => {
-  const uid = inputUid.value.trim();
-  let regionSelect = document.getElementById('region-select');
-  const region = regionSelect ? regionSelect.value : '';
-  const password = inputPassword.value.trim();
-  let params = new URLSearchParams();
-  if (uid) params.set('uid', uid);
-  if (region) params.set('region', region);
-  if (password) params.set('password', password);
-  window.open(domain + current.path + (params.toString() ? '?' + params.toString() : ''), '_blank');
-};
-// copy response
-document.getElementById('copyResp').onclick = () => {
-  const txt = responseArea.textContent || '';
-  if (!txt) return alert('Nothing to copy');
-  navigator.clipboard?.writeText(txt).then(() => alert('Response copied')).catch(() => alert('Copy failed'));
-};
-// clear response
-document.getElementById('clearResp').onclick = () => {
-  responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
-  respMeta.textContent = 'status: —';
-};
-// keyboard: Esc closes
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && backdrop.style.display === 'flex') {
-    backdrop.style.display = 'none';
-    backdrop.setAttribute('aria-hidden', 'true');
-  }
-});
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop.style.display === 'flex') {
+        backdrop.style.display = 'none';
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
+    });
+  });
 </script>
 </body>
 </html>
