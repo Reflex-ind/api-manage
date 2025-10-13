@@ -473,58 +473,31 @@ function openModal(path) {
   }
 
   // Try button click
-  tryBtn.onclick = async () => {
-  const uid = inputUid.value.trim();
-  let regionSelect = document.getElementById('region-select');
-  const region = regionSelect ? regionSelect.value : '';
-  const password = inputPassword.value.trim();
-  const path = current.path;
-  const method = info[path].method || 'GET';
-  let url = domain + path;
+  tryBtn.onclick = () => {
+    const uid = inputUid.value.trim();
+    let regionSelect = document.getElementById('region-select');
+    const region = regionSelect ? regionSelect.value : '';
+    const password = inputPassword.value.trim();
+    const path = current.path;
 
-  if (!uid) {
-    responseArea.textContent = 'Error: UID is required.';
-    respMeta.textContent = 'status: error';
-    return;
-  }
+    if (!uid) {
+      responseArea.textContent = 'Error: UID is required.';
+      respMeta.textContent = 'status: error';
+      return;
+    }
 
-  // Build URL with query parameters even for POST endpoints
-  let params = new URLSearchParams();
-  params.set('uid', uid);
-  if (region) params.set('region', region);
-  if (password) params.set('password', password);
-  const finalUrl = url + '?' + params.toString();
-
-  // Open in new tab
-  window.open(finalUrl, '_blank');
-
-  responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
-  respMeta.textContent = 'status: sent';
-};
-
-
-    // GET → normal fetch
+    // Build URL with query parameters for all endpoints
     let params = new URLSearchParams();
     params.set('uid', uid);
     if (region) params.set('region', region);
     if (password) params.set('password', password);
-    url += '?' + params.toString();
+    const finalUrl = domain + path + '?' + params.toString();
 
-    responseArea.textContent = 'Calling ' + url + ' ...';
-    respMeta.textContent = 'status: pending';
+    // Open in new tab
+    window.open(finalUrl, '_blank');
 
-    try {
-      const res = await fetch(url, fetchOptions);
-      const txt = await res.text();
-      let pretty;
-      try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch (e) { pretty = txt || 'No response data'; }
-      responseArea.textContent = pretty;
-      respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
-      if (res.status === 403 || res.status === 405) responseArea.textContent += '\n\nNote: This may be due to CORS or server restrictions.';
-    } catch (err) {
-      responseArea.textContent = 'Request failed — likely CORS or network error.\n\nDetails: ' + (err.message || String(err));
-      respMeta.textContent = 'status: error';
-    }
+    responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
+    respMeta.textContent = 'status: sent';
   };
 
   backdrop.style.display = 'flex';
