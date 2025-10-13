@@ -2,19 +2,19 @@
   "rewrites": [
     {
       "source": "/ban",
-      "destination": "https://nationbancheck.vercel.app/ban?key=34xx43"
+      "destination": "https://nationbancheck.vercel.app/ban"
     },
     {
       "source": "/info",
-      "destination": "https://nation-info-api.vercel.app/info?key=34xx43"
+      "destination": "https://nation-info-api.vercel.app/info"
     },
     {
       "source": "/like",
-      "destination": "https://nation-like-api.vercel.app/like?key=34xx43"
+      "destination": "https://nation-like-api.vercel.app/like"
     },
     {
       "source": "/token",
-      "destination": "https://nation-jwt-api.vercel.app/token?key=34xx43"
+      "destination": "https://nation-jwt-api.vercel.app/token"
     },
     {
       "source": "/:path*",
