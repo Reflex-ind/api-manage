@@ -474,48 +474,34 @@ function openModal(path) {
 
   // Try button click
   tryBtn.onclick = async () => {
-    const uid = inputUid.value.trim();
-    let regionSelect = document.getElementById('region-select');
-    const region = regionSelect ? regionSelect.value : '';
-    const password = inputPassword.value.trim();
-    const path = current.path;
-    const method = info[path].method || 'GET';
-    let url = domain + path;
-    let fetchOptions = { method, headers: {}, mode: 'cors' };
+  const uid = inputUid.value.trim();
+  let regionSelect = document.getElementById('region-select');
+  const region = regionSelect ? regionSelect.value : '';
+  const password = inputPassword.value.trim();
+  const path = current.path;
+  const method = info[path].method || 'GET';
+  let url = domain + path;
 
-    if (!uid) {
-      responseArea.textContent = 'Error: UID is required.';
-      respMeta.textContent = 'status: error';
-      return;
-    }
+  if (!uid) {
+    responseArea.textContent = 'Error: UID is required.';
+    respMeta.textContent = 'status: error';
+    return;
+  }
 
-    // POST → open form in new tab
-    if (method === 'POST') {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = url;
-      form.target = '_blank';
+  // Build URL with query parameters even for POST endpoints
+  let params = new URLSearchParams();
+  params.set('uid', uid);
+  if (region) params.set('region', region);
+  if (password) params.set('password', password);
+  const finalUrl = url + '?' + params.toString();
 
-      const addField = (name, value) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-      };
+  // Open in new tab
+  window.open(finalUrl, '_blank');
 
-      addField('uid', uid);
-      if (path === '/like' && region) addField('region', region);
-      if (path === '/token' && password) addField('password', password);
+  responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
+  respMeta.textContent = 'status: sent';
+};
 
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-
-      responseArea.textContent = '✅ POST request sent in new tab.';
-      respMeta.textContent = 'status: sent';
-      return;
-    }
 
     // GET → normal fetch
     let params = new URLSearchParams();
