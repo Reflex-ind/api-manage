@@ -141,6 +141,29 @@
     margin-top:8px;font-size:12px;color:var(--accent);word-break:break-all;
   }
 
+  /* Lock icon for like card */
+  .lock-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: var(--accent);
+    opacity: 0.8;
+    animation: lockGlow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes lockGlow {
+    from {
+      text-shadow: 0 0 5px rgba(0, 234, 255, 0.6), 0 0 10px rgba(0, 234, 255, 0.4), 0 0 15px rgba(0, 234, 255, 0.2);
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      text-shadow: 0 0 10px rgba(0, 234, 255, 0.8), 0 0 20px rgba(0, 234, 255, 0.6), 0 0 30px rgba(0, 234, 255, 0.4);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+  }
+
   /* modal */
   .modal-backdrop{
     position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55));
@@ -294,6 +317,7 @@
           <h3>/like</h3>
           <p>Like a profile (uid + region)</p>
           <div class="url-sample">/like?uid=5193358199&region=ind</div>
+          <div class="lock-icon">🔒</div>
         </div>
 
         <div class="card" data-endpoint="/token">
@@ -384,7 +408,6 @@
   </div>
 
 <script>
-// Initialization
 // Initialization
 document.getElementById('year').textContent = new Date().getFullYear();
 const domain = document.getElementById('domain').textContent.trim();
@@ -532,11 +555,19 @@ function openModal(path) {
   backdrop.setAttribute('aria-hidden', 'false');
 }
 
-// Card click → open modal
+// Card click → open modal with key check for /like
 cards.forEach(c => {
   c.onclick = () => {
     if (!c.dataset.endpoint) return;
-    openModal(c.dataset.endpoint);
+    const path = c.dataset.endpoint;
+    if (path === '/like') {
+      const key = prompt('Enter the key to unlock /like:');
+      if (key !== 'tex4561') {
+        alert('Invalid key');
+        return;
+      }
+    }
+    openModal(path);
   };
 });
 
@@ -600,9 +631,6 @@ document.addEventListener('keydown', e => {
     backdrop.setAttribute('aria-hidden', 'true');
   }
 });
-
-
-
 
 </script>
 </body>
