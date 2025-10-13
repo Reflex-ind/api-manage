@@ -385,6 +385,7 @@
 
 <script>
 // Initialization
+// Initialization
 document.getElementById('year').textContent = new Date().getFullYear();
 const domain = document.getElementById('domain').textContent.trim();
 document.getElementById('domain2').textContent = domain;
@@ -472,11 +473,11 @@ function openModal(path) {
     inputPassword.style.display = 'block';
   }
 
-  // Show/Hide "Open in new tab" button
+  // Show/Hide "Open in new tab" button (hidden for POST)
   openInNew.style.display = cfg.method === 'POST' ? 'none' : 'inline-flex';
 
   // Try button click
-  tryBtn.onclick = () => {
+  tryBtn.onclick = async () => {
     const uid = inputUid.value.trim();
     const regionSelect = document.getElementById('region-select');
     const region = regionSelect ? regionSelect.value : '';
@@ -488,17 +489,43 @@ function openModal(path) {
       return;
     }
 
-    // Build URL
-    const params = new URLSearchParams();
-    params.set('uid', uid);
-    if (region) params.set('region', region);
-    if (password) params.set('password', password);
+    // Build URL and options
+    const url = domain + path;
+    const method = cfg.method;
 
-    const finalUrl = domain + path + '?' + params.toString();
-    window.open(finalUrl, '_blank');
+    if (method === 'GET') {
+      // GET → show response in box
+      let params = new URLSearchParams();
+      params.set('uid', uid);
+      if (region) params.set('region', region);
+      const finalUrl = url + '?' + params.toString();
 
-    responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
-    respMeta.textContent = 'status: sent';
+      responseArea.textContent = 'Calling ' + finalUrl + ' ...';
+      respMeta.textContent = 'status: pending';
+
+      try {
+        const res = await fetch(finalUrl, { method, mode:'cors' });
+        const txt = await res.text();
+        let pretty;
+        try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch { pretty = txt || 'No response'; }
+        responseArea.textContent = pretty;
+        respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
+      } catch (err) {
+        responseArea.textContent = 'Request failed — ' + (err.message || err);
+        respMeta.textContent = 'status: error';
+      }
+    }
+    else if (method === 'POST') {
+      // POST → open in new tab
+      const params = new URLSearchParams();
+      params.set('uid', uid);
+      if (region) params.set('region', region);
+      if (password) params.set('password', password);
+      const finalUrl = url + '?' + params.toString();
+      window.open(finalUrl, '_blank');
+      responseArea.textContent = '✅ Opened in new tab: ' + finalUrl;
+      respMeta.textContent = 'status: sent';
+    }
   };
 
   backdrop.style.display = 'flex';
@@ -573,6 +600,7 @@ document.addEventListener('keydown', e => {
     backdrop.setAttribute('aria-hidden', 'true');
   }
 });
+
 
 
 
