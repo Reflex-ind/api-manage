@@ -412,7 +412,7 @@ const info = {
   '/token': { method:'POST', desc:'Generate a token using uid & password', sample:'/token?uid=5193358199&password=xxxxx' }
 };
 
-// Utility for restoring region input if needed
+// Restore previous region input if dropdown exists
 function restoreRegionInput() {
   let select = document.getElementById('region-select');
   if (select) {
@@ -423,12 +423,8 @@ function restoreRegionInput() {
 }
 
 function openModal(path) {
-  // 👇 Hide or Show "Open in New Tab" button depending on method
-if (info[path].method === 'POST') {
-  openInNew.style.display = 'none';
-} else {
-  openInNew.style.display = 'inline-flex';
-}
+  // Show/Hide "Open in New Tab" button for GET only
+  openInNew.style.display = info[path].method === 'POST' ? 'none' : 'inline-flex';
   current.path = path;
   const cfg = info[path] || {};
   modalTitle.textContent = path;
@@ -436,24 +432,24 @@ if (info[path].method === 'POST') {
   methodLabel.textContent = cfg.method || 'GET';
   exampleUrl.textContent = domain + (cfg.sample || path);
 
-  // Reset all
+  // Reset inputs and response
   inputUid.value = '';
   inputRegion.value = '';
   inputPassword.value = '';
   respMeta.textContent = 'status: —';
   responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
 
-  // Safely cleanup and reset all input UI
   inputUid.parentElement.style.display = 'none';
   inputRegion.parentElement.style.display = 'none';
   inputPassword.parentElement.style.display = 'none';
   restoreRegionInput();
 
+  // Show inputs depending on endpoint
   if (path === '/ban') {
     inputUid.parentElement.style.display = 'flex';
   } else if (path === '/info' || path === '/like') {
     inputUid.parentElement.style.display = 'flex';
-    // Insert region select dropdown afresh
+    // Add region dropdown
     const regionRow = inputRegion.parentElement;
     inputRegion.style.display = 'none';
     let select = document.createElement('select');
@@ -476,94 +472,97 @@ if (info[path].method === 'POST') {
     inputPassword.style.display = 'block';
   }
 
+  // Try button click
   tryBtn.onclick = async () => {
-  const uid = inputUid.value.trim();
-  let regionSelect = document.getElementById('region-select');
-  const region = regionSelect ? regionSelect.value : '';
-  const password = inputPassword.value.trim();
-  const path = current.path;
-  const method = info[path].method || 'GET';
-  let url = domain + path;
-  let fetchOptions = { method, headers: {}, mode: 'cors' };
+    const uid = inputUid.value.trim();
+    let regionSelect = document.getElementById('region-select');
+    const region = regionSelect ? regionSelect.value : '';
+    const password = inputPassword.value.trim();
+    const path = current.path;
+    const method = info[path].method || 'GET';
+    let url = domain + path;
+    let fetchOptions = { method, headers: {}, mode: 'cors' };
 
-  if (!uid) {
-    responseArea.textContent = 'Error: UID is required.';
-    respMeta.textContent = 'status: error';
-    return;
-  }
+    if (!uid) {
+      responseArea.textContent = 'Error: UID is required.';
+      respMeta.textContent = 'status: error';
+      return;
+    }
 
-  // 🧾 If POST: instead of fetch, open form in new tab
-  if (method === 'POST') {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = '_blank';
+    // POST → open form in new tab
+    if (method === 'POST') {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.target = '_blank';
 
-    const addField = (name, value) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    };
+      const addField = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      };
 
-    addField('uid', uid);
-    if (path === '/like' && region) addField('region', region);
-    if (path === '/token' && password) addField('password', password);
+      addField('uid', uid);
+      if (path === '/like' && region) addField('region', region);
+      if (path === '/token' && password) addField('password', password);
 
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
 
-    // 👇 update modal status display
-    responseArea.textContent = '✅ POST request sent in new tab.';
-    respMeta.textContent = 'status: sent';
-    return;
-  }
+      responseArea.textContent = '✅ POST request sent in new tab.';
+      respMeta.textContent = 'status: sent';
+      return;
+    }
 
-  // 🧾 If GET: normal fetch
-  let params = new URLSearchParams();
-  params.set('uid', uid);
-  if (region) params.set('region', region);
-  if (password) params.set('password', password);
-  url += '?' + params.toString();
+    // GET → normal fetch
+    let params = new URLSearchParams();
+    params.set('uid', uid);
+    if (region) params.set('region', region);
+    if (password) params.set('password', password);
+    url += '?' + params.toString();
 
-  responseArea.textContent = 'Calling ' + url + ' ...';
-  respMeta.textContent = 'status: pending';
+    responseArea.textContent = 'Calling ' + url + ' ...';
+    respMeta.textContent = 'status: pending';
 
-  try {
-    const res = await fetch(url, fetchOptions);
-    const txt = await res.text();
-    let pretty;
-    try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch (e) { pretty = txt || 'No response data'; }
-    responseArea.textContent = pretty;
-    respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
-    if (res.status === 403 || res.status === 405) responseArea.textContent += '\n\nNote: This may be due to CORS or server restrictions.';
-  } catch (err) {
-    responseArea.textContent = 'Request failed — likely CORS or network error.\n\nDetails: ' + (err.message || String(err));
-    respMeta.textContent = 'status: error';
-  }
-};
-
+    try {
+      const res = await fetch(url, fetchOptions);
+      const txt = await res.text();
+      let pretty;
+      try { pretty = JSON.stringify(JSON.parse(txt), null, 2); } catch (e) { pretty = txt || 'No response data'; }
+      responseArea.textContent = pretty;
+      respMeta.textContent = 'status: ' + res.status + ' ' + res.statusText;
+      if (res.status === 403 || res.status === 405) responseArea.textContent += '\n\nNote: This may be due to CORS or server restrictions.';
+    } catch (err) {
+      responseArea.textContent = 'Request failed — likely CORS or network error.\n\nDetails: ' + (err.message || String(err));
+      respMeta.textContent = 'status: error';
+    }
+  };
 
   backdrop.style.display = 'flex';
   backdrop.setAttribute('aria-hidden', 'false');
 }
 
-// Always re-attach listeners
+// Modal open on card click
 cards.forEach(c => {
   c.onclick = () => openModal(c.dataset.endpoint);
 });
+
+// Close modal
 document.getElementById('closeModal').onclick = () => {
   backdrop.style.display = 'none';
   backdrop.setAttribute('aria-hidden', 'true');
 };
 backdrop.onclick = (e) => { if (e.target === backdrop) { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden', 'true'); } };
-// Example URL copy
+
+// Copy example URL
 document.getElementById('copyUrlBtn').onclick = () => {
   navigator.clipboard?.writeText(exampleUrl.textContent).then(() => { alert('URL copied to clipboard'); }).catch(() => alert('Copy failed — select and copy manually'));
 };
-// open in new tab
+
+// Open GET in new tab
 openInNew.onclick = () => {
   const uid = inputUid.value.trim();
   let regionSelect = document.getElementById('region-select');
@@ -571,7 +570,6 @@ openInNew.onclick = () => {
   const password = inputPassword.value.trim();
   const path = current.path;
 
-  // ⚠️ Fix for POST endpoints like /token
   if (info[path].method === 'POST') {
     alert('⚠️ This endpoint uses POST method.\nCannot open in new tab with GET.\nUse the "Try" button instead.');
     return;
@@ -583,24 +581,28 @@ openInNew.onclick = () => {
   if (password) params.set('password', password);
   window.open(domain + current.path + (params.toString() ? '?' + params.toString() : ''), '_blank');
 };
-// copy response
+
+// Copy response
 document.getElementById('copyResp').onclick = () => {
   const txt = responseArea.textContent || '';
   if (!txt) return alert('Nothing to copy');
   navigator.clipboard?.writeText(txt).then(() => alert('Response copied')).catch(() => alert('Copy failed'));
 };
-// clear response
+
+// Clear response
 document.getElementById('clearResp').onclick = () => {
   responseArea.innerHTML = '<div style="opacity:0.5">No response yet. Click Try to call the API (CORS may block requests in browser).</div>';
   respMeta.textContent = 'status: —';
 };
-// keyboard: Esc closes
+
+// Keyboard: Esc closes modal
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && backdrop.style.display === 'flex') {
     backdrop.style.display = 'none';
     backdrop.setAttribute('aria-hidden', 'true');
   }
 });
+
 
 </script>
 </body>
