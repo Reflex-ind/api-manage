@@ -14,7 +14,7 @@
     },
     {
       "source": "/token",
-      "destination": "https://nation-jwt-api.vercel.app/token"
+      "destination": "https://freefire-jwt-generator-api-seven.vercel.app/api/token"
     },
     {
       "source": "/:path*",
