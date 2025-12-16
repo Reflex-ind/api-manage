@@ -10,7 +10,7 @@
     },
     {
       "source": "/like",
-      "destination": "https://api-forward-six.vercel.app/like" #https://nation-like-api.vercel.app/like
+      "destination": "https://api-forward-six.vercel.app/like"
     },
     {
       "source": "/token",
